@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Modules\Tenant\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Group extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'name',
+        'code',
+        'owner_name',
+        'mobile',
+        'contact_email',
+        'status'
+    ];
+
+}
