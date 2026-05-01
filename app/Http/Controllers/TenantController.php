@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Modules\Tenant\Controllers;
+namespace App\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Tenant\Requests\RegisterTenantRequest;
-use App\Modules\Tenant\Services\TenantService;
+use App\Http\Requests\RegisterTenantRequest;
+use App\Services\TenantService;
+use GuzzleHttp\Psr7\Request;
 
 class TenantController extends Controller
 {
@@ -13,6 +14,12 @@ class TenantController extends Controller
     public function __construct(TenantService $service)
     {
         $this->service = $service;
+    }
+
+    public function registerTenant(Request $request)
+    {
+        dd($request);
+        return view('pages.home');
     }
 
     public function register(RegisterTenantRequest $request)

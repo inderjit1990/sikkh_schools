@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Modules\Tenant\Repositories;
+namespace App\Repositories;
 
-use App\Modules\Tenant\Models\School;
-use App\Modules\Tenant\Models\Group;
+use App\Models\School;
+use App\Models\Group;
 
 class TenantRepository
 {

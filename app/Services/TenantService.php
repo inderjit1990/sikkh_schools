@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Modules\Tenant\Services;
+namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
-use App\Modules\Tenant\Repositories\TenantRepository;
+use App\Repositories\TenantRepository;
 
 class TenantService
 {

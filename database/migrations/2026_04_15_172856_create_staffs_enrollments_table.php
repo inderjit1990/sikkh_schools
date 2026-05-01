@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('staffs_enrollments', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('staff_id')->constrained('staffs')->onDelete('cascade');
+            $table->id('id');
+            $table->foreignId('staff_id')->constrained('staffs')->onDelete('cascade');
             $table->foreignId('session_id')->constrained('school_sessions')->onDelete('cascade');    
             $table->string('role'); // e.g., teacher, admin, etc.   
             $table->timestamps();

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sections', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('class_id')->constrained('classes')->onDelete('cascade');
+            $table->id('id');
+            $table->foreignId('class_id')->constrained('classes')->onDelete('cascade');
             $table->string('full_name');
             $table->tinyInteger('status')->default(1); // 1 = active, 0 = inactive
             $table->timestamps();
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('students');
+        Schema::dropIfExists('sections');
     }
 };

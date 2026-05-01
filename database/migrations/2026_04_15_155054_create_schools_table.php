@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('domain')->nullable()->unique();    
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
+            $table->string('password')->nullable();
             $table->string('status')->default('active');
 
             $table->timestamps();
