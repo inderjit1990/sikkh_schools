@@ -13,11 +13,13 @@ class School extends Model
         'group_id',
         'name',
         'code',
-        'sub_domain',
+        'subdomain',
         'domain',
         'email',
         'phone',
-        'status'
+        'status',
+        'verify_email_at',
+        'password',
     ];
 
 }

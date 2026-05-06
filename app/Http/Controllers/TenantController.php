@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Controllers;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterTenantRequest;
 use App\Services\TenantService;
-use GuzzleHttp\Psr7\Request;
+use Illuminate\Support\Facades\DB;
 
 class TenantController extends Controller
 {
@@ -16,20 +16,46 @@ class TenantController extends Controller
         $this->service = $service;
     }
 
-    public function registerTenant(Request $request)
+    public function registerTenant()
     {
-        dd($request);
-        return view('pages.home');
+        return view('pages.register');
     }
 
     public function register(RegisterTenantRequest $request)
     {
         $school = $this->service->register($request->validated());
 
-        return response()->json([
-            'message' => 'School registered successfully',
-            'data' => $school,
-            'url' => 'https://' . $school->domain
-        ]);
+        // decide final URL (domain or subdomain)
+        $url = $school->domain 
+            ? 'https://' . $school->domain 
+            : 'https://' . $school->subdomain . '.sikhschools.com';
+
+        return redirect()->route('tenant.register')
+            ->with('success', 'School registered successfully!')
+            ->with('url', $url);
+    }
+
+    public function verify($token)
+    {
+        $school = \App\Models\School::where('verification_token', $token)->firstOrFail();
+
+        DB::transaction(function () use ($school) {
+
+            // mark verified
+            $school->update([
+                'email_verified_at' => now(),
+                'verification_token' => null,
+                'is_active' => true,
+            ]);
+
+            // 🔥 CREATE SCHEMA HERE
+            DB::statement("CREATE SCHEMA {$school->code}");
+
+            // (optional) run tenant migrations here
+        });
+
+        $url = $school->domain;
+
+        return view('pages.verified', compact('url'));
     }
 }

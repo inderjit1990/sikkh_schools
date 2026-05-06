@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 use App\Repositories\TenantRepository;
 
 class TenantService
@@ -18,30 +20,41 @@ class TenantService
     {
         return DB::transaction(function () use ($data) {
 
+         $token = Str::random(64);
+
             // 1. Create Group
             $group = $this->repo->createGroup([
-                'name' => $data['group_name'],
-                'code' => strtolower(str_replace(' ', '_', $data['group_name'])),
-                'mobile' => $data['group_mobile'],
-                'contact_email' => $data['group_email'],
+                'name' => $data['name'],
+                'code' => Str::slug($data['name'], '_'),
+                'mobile' => $data['phone'],
+                'contact_email' => $data['email'],
             ]);
 
-            // 2. Prepare domain
-            $subdomain = strtolower($data['sub_domain']);
-            $domain = $subdomain . '.sikhschools.com';
+            // 2. Resolve domain / subdomain
+            // $subdomain = $data['subdomain'] ?? null;
+            // $domain = $data['domain'] ?? null;
 
             // 3. Create School
             $school = $this->repo->createSchool([
                 'group_id' => $group->id,
-                'name' => $data['school_name'],
-                'code' => strtolower(str_replace(' ', '_', $data['school_name'])),
-                'sub_domain' => $subdomain,
-                'domain' => $domain,
+                'name' => $data['name'],
+                'code' => Str::slug($data['name'], '_'),
+
+                'subdomain' => $data['subdomain'] ?? null,
+                'domain' => $data['domain'] ?? null,
+                // 'is_custom_domain' => $isCustomDomain,
+
                 'email' => $data['email'],
                 'phone' => $data['phone'],
-            ]);
 
-            // 🔥 NEXT: schema creation (we’ll add next step)
+                'password' => Hash::make($data['password']),
+                'verification_token' => $token,
+        ]);
+
+        // 🔥 Dispatch email job
+        dispatch(new \App\Jobs\SendVerificationEmailJob($school));
+
+            // 🔥 NEXT STEP: create tenant DB / schema here
 
             return $school;
         });

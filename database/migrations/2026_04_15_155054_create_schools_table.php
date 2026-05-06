@@ -17,12 +17,14 @@ return new class extends Migration
 
             $table->string('name');
             $table->string('code')->unique();
-            $table->string('sub_domain')->nullable()->unique(); 
+            $table->string('subdomain')->nullable()->unique(); 
             $table->string('domain')->nullable()->unique();    
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('password')->nullable();
-            $table->string('status')->default('active');
+            $table->string('status')->default('inactive'); // active, inactive, pending
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('verification_token')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

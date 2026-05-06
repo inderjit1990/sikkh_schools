@@ -16,7 +16,7 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 overflow-x-hidden">
     @include('partials.header')
-
+    @include('partials.messages')
     <main class="min-h-screen animate__animated animate__fadeIn">
         @yield('content')
     </main>
