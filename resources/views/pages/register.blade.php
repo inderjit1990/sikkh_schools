@@ -83,9 +83,9 @@
                     <input type="text" name="subdomain" id="subdomain"
                         value="{{ old('subdomain') }}"
                         class="w-full px-4 py-3 rounded-l-lg border focus:ring-2 focus:ring-amber-500 outline-none"
-                        placeholder="school-code">
+                        placeholder="school-code" readonly>
                     <span class="bg-slate-100 px-4 py-3 rounded-r-lg border-y border-r text-slate-500">
-                        .sikhschools.com
+                        {{ env('DOMAIN', '.sikhschools.com') }}
                     </span>
                 </div>
                 @error('subdomain')

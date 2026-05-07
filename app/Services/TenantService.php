@@ -16,6 +16,11 @@ class TenantService
         $this->repo = $repo;
     }
 
+    public function findSchool($identifier)
+    {
+        return $this->repo->findSchool($identifier);
+    }
+
     public function register($data)
     {
         return DB::transaction(function () use ($data) {

@@ -16,4 +16,13 @@ class TenantRepository
     {
         return School::create($data);
     }
+
+    public function findSchool($identifier)
+    {
+        return School::where('subdomain', $identifier)
+            ->orWhere('domain', $identifier)
+            ->orWhere('code', $identifier)
+            ->orWhere('id', $identifier)
+            ->first();
+    }
 }

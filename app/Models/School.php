@@ -20,6 +20,7 @@ class School extends Model
         'status',
         'verify_email_at',
         'password',
+        'verification_token'
     ];
 
 }

@@ -11,5 +11,12 @@ Route::get('/posts', fn() => view('pages.posts'));
 Route::group(['as' => 'tenant.'], function () {
     Route::get('/register', [TenantController::class, 'registerTenant'])->name('register');
     Route::post('/register', [TenantController::class, 'register'])->name('store.register');
-    Route::get('/verify/{token}', [TenantController::class, 'verify'])->name('tenant.verify');
+    Route::get('/verify/{token}', [TenantController::class, 'verify'])->name('verify');
+
+    Route::get('/processing/{id}', [TenantController::class, 'processing'])->name('processing');
+    Route::get('/status/{id}', [TenantController::class, 'status'])->name('status');
+
+    Route::get('/ready/{id}', [TenantController::class, 'ready'])
+    ->name('ready');
+
 });

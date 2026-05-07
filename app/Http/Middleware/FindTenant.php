@@ -1,64 +1,136 @@
 <?php
+
 namespace App\Http\Middleware;
 
 use Closure;
 use App\Models\School;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use App\Services\TenantConnectionService;
 
 class FindTenant
 {
-    public function handle($request, Closure $next)
+    protected TenantConnectionService $tenantConnectionService;
+
+    public function __construct(
+        TenantConnectionService $tenantConnectionService
+    ) {
+        $this->tenantConnectionService = $tenantConnectionService;
+    }
+
+    public function handle(Request $request, Closure $next)
     {
         $host = $request->getHost();
 
-        if ($host === 'sikhschools.com' || '127.0.0.1') {
+        /*
+        |--------------------------------------------------------------------------
+        | Skip Central Domains
+        |--------------------------------------------------------------------------
+        */
+
+        $centralDomains = [
+            '127.0.0.1',
+            'localhost',
+            'sikhschools.com',
+            'www.sikhschools.com',
+        ];
+
+        // support localhost:8000 etc
+        $cleanHost = explode(':', $host)[0];
+        dd('hi');
+
+        if (in_array($cleanHost, $centralDomains)) {
             return $next($request);
         }
+        /*
+        |--------------------------------------------------------------------------
+        | Tenant Cache
+        |--------------------------------------------------------------------------
+        */
 
-        $cacheKey = "tenant_data_{$host}";
-        $ttl = 10; // 10 minutes
+        $cacheKey = "tenant_data_{$cleanHost}";
+        $ttl = now()->addMinutes(10);
 
-        // 1. Try to get data from cache
-        $tenantData = Cache::get($cacheKey);
+        $tenantData = Cache::remember(
+            $cacheKey,
+            $ttl,
+            function () use ($cleanHost) {
 
-        if (!$tenantData) {
-            // 2. Cache Miss: Query Database
-            $parts = explode('.', $host);
-            $subdomain = $parts[0];
+                // extract subdomain
+                $parts = explode('.', $cleanHost);
 
-            $school = School::where('domain', $host)
-                ->orWhere('code', $subdomain)
-                ->first();
+                $subdomain = count($parts) > 2
+                    ? $parts[0]
+                    : null;
 
-            if (!$school) {
-                return response()->json(['error' => 'School not found'], 404);
+                // find school
+                $school = School::query()
+                    ->where('domain', $cleanHost)
+                    ->orWhere('subdomain', $subdomain)
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$school) {
+                    abort(404, 'School not found.');
+                }
+
+                // current session
+                $session = \DB::table('school_sessions')
+                    ->where('school_id', $school->id)
+                    ->where('is_current', true)
+                    ->first();
+
+                return [
+                    'school' => $school,
+                    'session' => $session,
+                ];
             }
+        );
 
-            $session = DB::table('school_sessions')
-                ->where('school_id', $school->id)
-                ->where('is_current', true)
-                ->first();
+        /*
+        |--------------------------------------------------------------------------
+        | Switch Tenant Schema
+        |--------------------------------------------------------------------------
+        */
 
-            $tenantData = [
-                'school' => $school,
-                'session' => $session
-            ];
-        }
-
-        // 3. Sliding Logic: Re-save to cache for another 10 mins on every request
-        // This ensures the 10-min timer only starts counting down after the LAST request.
-        Cache::put($cacheKey, $tenantData, now()->addMinutes($ttl));
-
-        // 4. Apply Tenant Context
         $school = $tenantData['school'];
-        
-        // Switch Schema (PostgreSQL)
-        DB::statement("SET search_path TO {$school->schema_name}");
+
+        $schema = $school->schema_name
+            ?? $school->code;
+
+        $this->tenantConnectionService
+            ->switchSchema($schema);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Bind Tenant Context
+        |--------------------------------------------------------------------------
+        */
 
         app()->instance('tenant', $school);
-        app()->instance('current_session', $tenantData['session']);
 
-        return $next($request);
+        app()->instance(
+            'current_session',
+            $tenantData['session']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Continue Request
+        |--------------------------------------------------------------------------
+        */
+
+        $response = $next($request);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reset Schema Back To Public
+        |--------------------------------------------------------------------------
+        */
+
+        $this->tenantConnectionService
+            ->resetSchema();
+
+        return $response;
     }
 }

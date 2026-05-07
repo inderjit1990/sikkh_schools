@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterTenantRequest;
+use App\Models\School;
 use App\Services\TenantService;
 use Illuminate\Support\Facades\DB;
 
@@ -37,25 +38,71 @@ class TenantController extends Controller
 
     public function verify($token)
     {
-        $school = \App\Models\School::where('verification_token', $token)->firstOrFail();
+        $school = School::where('verification_token', $token)
+            ->first();
+        // already verified
+        if ($school->email_verified_at) {
+            return redirect()->route('tenant.processing', $school->id);
+        }
 
         DB::transaction(function () use ($school) {
 
-            // mark verified
             $school->update([
                 'email_verified_at' => now(),
                 'verification_token' => null,
-                'is_active' => true,
+                'status' => 'processing',
             ]);
 
-            // 🔥 CREATE SCHEMA HERE
-            DB::statement("CREATE SCHEMA {$school->code}");
-
-            // (optional) run tenant migrations here
         });
 
-        $url = $school->domain;
+        // 🔥 Dispatch background setup job
+        dispatch(new \App\Jobs\SetupSchoolJob($school));
 
+        return redirect()->route('tenant.processing', $school->id);
+    }   
+
+    public function processing($id)
+    {
+        $school = $this->service->findSchool($id);
+
+        return view('pages.processing', compact('school'));
+    }
+
+    public function status($id)
+    {
+        $school = $this->service->findSchool($id);
+
+        if ($school->status === 'completed') {
+
+            return response()->json([
+                'status' => 'completed',
+                'redirect' => route('tenant.ready', $school->id),
+            ]);
+        }
+
+        if ($school->status === 'failed') {
+
+            return response()->json([
+                'status' => 'failed',
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'processing',
+        ]);
+    }
+
+    public function ready($id)
+    {
+        $school = $this->service->findSchool($id);
+
+        if(env('APP_ENV') === 'local') {
+            $url = 'http://' . $school->subdomain . env('DOMAIN', '.sikhschools.com');
+        } else {
+            $url = $school->domain 
+                ? 'https://' . $school->domain 
+                : 'https://' . $school->subdomain . env('DOMAIN', '.sikhschools.com');
+        }
         return view('pages.verified', compact('url'));
     }
 }

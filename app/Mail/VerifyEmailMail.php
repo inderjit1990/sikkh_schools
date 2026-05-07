@@ -39,7 +39,11 @@ class VerifyEmailMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.verify',
+             with: [
+                'school' => $this->school,
+                'url' => $this->url,
+            ],
         );
     }
 
