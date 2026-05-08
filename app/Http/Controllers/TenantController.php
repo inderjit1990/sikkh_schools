@@ -31,7 +31,7 @@ class TenantController extends Controller
             ? 'https://' . $school->domain 
             : 'https://' . $school->subdomain . '.sikhschools.com';
 
-        return redirect()->route('tenant.register')
+        return redirect()->route('school.register')
             ->with('success', 'School registered successfully!')
             ->with('url', $url);
     }
@@ -42,7 +42,7 @@ class TenantController extends Controller
             ->first();
         // already verified
         if ($school->email_verified_at) {
-            return redirect()->route('tenant.processing', $school->id);
+            return redirect()->route('school.processing', $school->id);
         }
 
         DB::transaction(function () use ($school) {
@@ -58,7 +58,7 @@ class TenantController extends Controller
         // 🔥 Dispatch background setup job
         dispatch(new \App\Jobs\SetupSchoolJob($school));
 
-        return redirect()->route('tenant.processing', $school->id);
+        return redirect()->route('school.processing', $school->id);
     }   
 
     public function processing($id)
@@ -76,7 +76,7 @@ class TenantController extends Controller
 
             return response()->json([
                 'status' => 'completed',
-                'redirect' => route('tenant.ready', $school->id),
+                'redirect' => route('school.ready', $school->id),
             ]);
         }
 

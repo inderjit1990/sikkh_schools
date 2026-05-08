@@ -6,7 +6,7 @@
         <h2 class="text-3xl font-bold text-sikh-blue mb-2 text-center">Register Your School</h2>
         <p class="text-slate-500 text-center mb-8">Join the network of modern Sikh institutions.</p>
         
-        <form method="POST" action="{{ route('tenant.store.register') }}" id="schoolForm">
+        <form method="POST" action="{{ route('school.store.register') }}" id="schoolForm">
             @csrf
 
             {{-- School Name --}}

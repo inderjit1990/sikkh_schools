@@ -29,7 +29,7 @@
 
 async function checkStatus() {
 
-    const response = await fetch("{{ route('tenant.status', $school->id) }}");
+    const response = await fetch("{{ route('school.status', $school->id) }}");
 
     const data = await response.json();
 

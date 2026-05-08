@@ -2,21 +2,25 @@
 
 use App\Http\Controllers\TenantController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 
-Route::get('/', fn() => view('pages.home'));
-Route::get('/about', fn() => view('pages.about'));
-Route::get('/posts', fn() => view('pages.posts'));
+Route::domain(['localhost', '127.0.0.1'])->group(function () {
 
-Route::group(['as' => 'tenant.'], function () {
-    Route::get('/register', [TenantController::class, 'registerTenant'])->name('register');
-    Route::post('/register', [TenantController::class, 'register'])->name('store.register');
-    Route::get('/verify/{token}', [TenantController::class, 'verify'])->name('verify');
+    Route::get('/', fn() => view('pages.home'));
+    Route::get('/about', fn() => view('pages.about'));
+    Route::get('/posts', fn() => view('pages.posts'));
 
-    Route::get('/processing/{id}', [TenantController::class, 'processing'])->name('processing');
-    Route::get('/status/{id}', [TenantController::class, 'status'])->name('status');
+    Route::group(['as' => 'school.'], function () {
 
-    Route::get('/ready/{id}', [TenantController::class, 'ready'])
-    ->name('ready');
+        Route::get('/register', [TenantController::class, 'registerTenant'])->name('register');
+        Route::post('/register', [TenantController::class, 'register'])->name('store.register');
+
+        Route::get('/verify/{token}', [TenantController::class, 'verify'])->name('verify');
+
+        Route::get('/processing/{id}', [TenantController::class, 'processing'])->name('processing');
+        Route::get('/status/{id}', [TenantController::class, 'status'])->name('status');
+
+        Route::get('/ready/{id}', [TenantController::class, 'ready'])->name('ready');
+
+    });
 
 });

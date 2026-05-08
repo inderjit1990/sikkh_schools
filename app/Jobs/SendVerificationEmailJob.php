@@ -15,7 +15,7 @@ class SendVerificationEmailJob implements ShouldQueue
 
     public function handle()
     {
-        $url = route('tenant.verify', $this->school->verification_token);
+        $url = route('school.verify', $this->school->verification_token);
 
         Mail::to($this->school->email)->send(
             new \App\Mail\VerifyEmailMail($this->school, $url)
