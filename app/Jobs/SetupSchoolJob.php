@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\School;
+use App\Models\SchoolSession;
 use App\Services\TenantConnectionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -29,10 +30,10 @@ class SetupSchoolJob implements ShouldQueue
     ): void {
 
         try {
-
+            $dbName = $this->school->subdomain;
             // sanitize schema
             $schema = $tenantConnectionService
-                ->sanitizeSchema($this->school->code);
+                ->sanitizeSchema($dbName);
 
             // 1. Create tenant schema
             $tenantConnectionService->createSchema($schema);
@@ -41,13 +42,29 @@ class SetupSchoolJob implements ShouldQueue
             $tenantConnectionService->runTenantMigrations($schema);
 
             // 3. Optional: run tenant seeders
-            /*
+            
             $tenantConnectionService->seedTenant(
                 $schema,
-                \Database\Seeders\TenantSeeder::class
+                \Database\Seeders\ThemeStyleSeeder::class
             );
-            */
-
+            
+            $tenantConnectionService->switchSchema($schema);
+            //after create schema and run migrations, you can also perform any additional setup like creating default roles, permissions, etc.
+            // create record in tenant's schools table with status 'completed' and is_active true
+            $schoolRecord = $this->school->toArray();
+            $this->school->create($schoolRecord + [
+                'status' => 'completed',
+                'is_active' => true,
+            ]);
+           
+            // //also create a school session record if you have a separate sessions table for tenant schools
+            SchoolSession::create([
+                'name' => now()->year . '-' . (now()->year + 1),
+                'start_date' => now(),
+                'end_date' => now()->addYear(),
+                'is_current' => true,
+            ]);
+            
             // 4. Reset back to public schema
             $tenantConnectionService->resetSchema();
 
@@ -57,17 +74,16 @@ class SetupSchoolJob implements ShouldQueue
                 'is_active' => true,
             ]);
 
+
         } catch (\Exception $e) {
 
             // reset schema on failure
             $tenantConnectionService->resetSchema();
 
             // optional cleanup
-            /*
-            $tenantConnectionService->dropSchema(
-                $this->school->code
-            );
-            */
+            
+            $tenantConnectionService->dropSchema($dbName);
+            
 
             // update failed status
             $this->school->update([
@@ -78,7 +94,7 @@ class SetupSchoolJob implements ShouldQueue
             // log error
             \Log::error('School setup failed', [
                 'school_id' => $this->school->id,
-                'schema' => $this->school->code,
+                'schema' => $dbName,
                 'message' => $e->getMessage(),
             ]);
 

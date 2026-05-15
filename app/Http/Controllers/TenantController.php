@@ -26,20 +26,13 @@ class TenantController extends Controller
     {
         $school = $this->service->register($request->validated());
 
-        // decide final URL (domain or subdomain)
-        $url = $school->domain 
-            ? 'https://' . $school->domain 
-            : 'https://' . $school->subdomain . '.sikhschools.com';
-
         return redirect()->route('school.register')
-            ->with('success', 'School registered successfully!')
-            ->with('url', $url);
+            ->with('success', 'School registered successfully!');
     }
 
     public function verify($token)
     {
-        $school = School::where('verification_token', $token)
-            ->first();
+        $school = $this->service->findSchool($token,'verification_token');
         // already verified
         if ($school->email_verified_at) {
             return redirect()->route('school.processing', $school->id);

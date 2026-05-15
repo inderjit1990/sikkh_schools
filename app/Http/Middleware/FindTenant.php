@@ -7,15 +7,18 @@ use App\Models\School;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use App\Services\TenantConnectionService;
+use App\Services\TenantService;
 
 class FindTenant
 {
     protected TenantConnectionService $tenantConnectionService;
+    protected TenantService $service;
 
     public function __construct(
-        TenantConnectionService $tenantConnectionService
+        TenantConnectionService $tenantConnectionService,TenantService $service
     ) {
         $this->tenantConnectionService = $tenantConnectionService;
+        $this->service = $service;
     }
 
     public function handle(Request $request, Closure $next)
@@ -45,7 +48,7 @@ class FindTenant
             */
 
             $cacheKey = "tenant_data_{$cleanHost}";
-            $ttl = now()->addMinutes(10);
+            $ttl = now()->addMinutes(20);
 
             $tenantData = Cache::remember($cacheKey, $ttl, function () use ($cleanHost) {
 
@@ -84,7 +87,7 @@ class FindTenant
             $school = $tenantData['school'];
 
             $schema = $this->tenantConnectionService
-                ->sanitizeSchema($school->code);
+                ->sanitizeSchema($school->subdomain);
 
             $this->tenantConnectionService
                 ->switchSchema($schema);
@@ -94,8 +97,9 @@ class FindTenant
             | Bind Tenant Context
             |--------------------------------------------------------------------------
             */
+            $schoolDetails = $this->service->findSchoolWithMany($school['code'],['code'],['themeStyle','sessions','posts']);
 
-            app()->instance('tenant', $school);
+            app()->instance('tenant', $schoolDetails);
 
             /*
             |--------------------------------------------------------------------------

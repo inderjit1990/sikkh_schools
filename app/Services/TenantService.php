@@ -9,17 +9,23 @@ use App\Repositories\TenantRepository;
 
 class TenantService
 {
-    protected $repo;
+    protected TenantRepository $repo;
 
     public function __construct(TenantRepository $repo)
     {
         $this->repo = $repo;
     }
 
-    public function findSchool($identifier)
+    public function findSchool($identifier,$key = 'id')
     {
-        return $this->repo->findSchool($identifier);
+        return $this->repo->findSchool($identifier, $key);
     }
+
+     public function findSchoolWithMany($identifier,$key = ['id'],$with = [])
+    {
+        return $this->repo->findSchoolWithMany($identifier, $key, $with);
+    }
+
 
     public function register($data)
     {
@@ -43,7 +49,7 @@ class TenantService
             $school = $this->repo->createSchool([
                 'group_id' => $group->id,
                 'name' => $data['name'],
-                'code' => Str::slug($data['name'], '_'),
+                'code' => rand(1,9999).'_'.time(),
 
                 'subdomain' => $data['subdomain'] ?? null,
                 'domain' => $data['domain'] ?? null,

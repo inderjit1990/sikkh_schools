@@ -17,12 +17,25 @@ class TenantRepository
         return School::create($data);
     }
 
-    public function findSchool($identifier)
+    public function findSchool($identifier,$key = 'id')
     {
-        return School::where('subdomain', $identifier)
-            ->orWhere('domain', $identifier)
-            ->orWhere('code', $identifier)
-            ->orWhere('id', $identifier)
-            ->first();
+        return School::where($key, $identifier)->first();
+    }
+
+    public function findSchoolWithMany($identifier,$key = ['id'],$with = [])
+    {
+        $query = School::query();
+
+        foreach ($key as $no => $k) {
+                if ($no == 0) {
+                    $query->where($k, $identifier);
+                } else {
+                    $query->orWhere($k, $identifier);
+                }
+        }
+        if (!empty($with)) {
+            $query->with($with);
+        }
+        return $query->first();
     }
 }

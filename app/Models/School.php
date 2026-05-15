@@ -23,4 +23,24 @@ class School extends Model
         'verification_token'
     ];
 
+    public function group()
+    {
+        return $this->belongsTo(Group::class);
+    }
+
+    public function sessions()
+    {
+        return $this->hasMany(SchoolSession::class);
+    }
+
+    public function themeStyle()
+    {
+        return $this->hasOne(ThemeStyle::class);
+    }
+
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+
 }

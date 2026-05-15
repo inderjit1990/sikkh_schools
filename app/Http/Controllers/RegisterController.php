@@ -17,7 +17,6 @@ class RegisterController extends Controller
 
     public function registerTenant()
     {
-        dd('request');
         return view('pages.home');
     }
 
