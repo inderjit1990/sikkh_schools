@@ -70,7 +70,6 @@ class FindTenant
                     'school' => $school
                 ];
             });
-
             // ✅ Handle "not found" OUTSIDE cache
             if (!$tenantData || !isset($tenantData['school'])) {
                 return response()->view('errors.tenant-not-found', [
@@ -92,12 +91,13 @@ class FindTenant
             $this->tenantConnectionService
                 ->switchSchema($schema);
 
+
             /*
             |--------------------------------------------------------------------------
             | Bind Tenant Context
             |--------------------------------------------------------------------------
             */
-            $schoolDetails = $this->service->findSchoolWithMany($school['code'],['code'],['themeStyle','sessions','posts']);
+            $schoolDetails = $this->service->findSchoolWithMany($school['code'],['code'],['sessions','themeStyle']);
 
             app()->instance('tenant', $schoolDetails);
 
@@ -123,6 +123,11 @@ class FindTenant
 
             // always reset on failure
             $this->tenantConnectionService->resetSchema();
+
+            \Log::error("Tenant resolution failed for host: {$cleanHost}", [
+                'error' => $e->getMessage(),
+                'stack' => $e->getTraceAsString(),
+            ]);
 
             return response()->view('errors.tenant-not-found', [
                 'host' => '/'

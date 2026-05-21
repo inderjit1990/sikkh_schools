@@ -13,12 +13,27 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->string('first_name');
+            $table->string('last_name')->nullable();
+
+            $table->string('email')->unique()->nullable();
+            $table->string('country_code')->default('+91');
+            $table->string('mobile')->unique()->nullable();
+
+            // Authentication
+            $table->string('password')->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
             $table->rememberToken();
+
+            // Role Type (optional helper)
+            $table->string('role')->nullable();
+            // school_admin, staff, student, parent
+
+            // Status
+            $table->boolean('is_active')->default(true);
+
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

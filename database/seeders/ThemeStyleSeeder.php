@@ -13,7 +13,11 @@ class ThemeStyleSeeder extends Seeder
      */
     public function run(): void
     {
-        ThemeStyle::create([
+
+        ThemeStyle::updateOrCreate(
+            [
+                'school_id' => 1,
+            ], [
             'primary_color' => '#3490dc',
             'secondary_color' => '#ffed4a',
             'background_color' => '#f8f9fa',

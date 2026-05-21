@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Status;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterTenantRequest;
 use App\Models\School;
@@ -43,7 +44,7 @@ class TenantController extends Controller
             $school->update([
                 'email_verified_at' => now(),
                 'verification_token' => null,
-                'status' => 'processing',
+                'status' => Status::PROCESSING,
             ]);
 
         });
@@ -65,7 +66,7 @@ class TenantController extends Controller
     {
         $school = $this->service->findSchool($id);
 
-        if ($school->status === 'completed') {
+        if ($school->status === Status::COMPLETED) {
 
             return response()->json([
                 'status' => 'completed',
@@ -73,7 +74,7 @@ class TenantController extends Controller
             ]);
         }
 
-        if ($school->status === 'failed') {
+        if ($school->status === Status::FAILED) {
 
             return response()->json([
                 'status' => 'failed',

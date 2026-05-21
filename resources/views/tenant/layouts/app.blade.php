@@ -9,8 +9,8 @@
     {{-- Dynamic Theme --}}
     <style>
         :root {
-            --primary: {{ app('tenant')->primary_color ?? '#1e3a8a' }};
-            --secondary: {{ app('tenant')->secondary_color ?? '#f59e0b' }};
+            --primary: {{ app('tenant')->themeStyle->primary_color ?? '#1e3a8a' }};
+            --secondary: {{ app('tenant')->themeStyle->secondary_color ?? '#f59e0b' }};
         }
 
         .bg-primary { background-color: var(--primary); }

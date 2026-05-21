@@ -14,7 +14,12 @@ class TenantConnectionService
     protected string $defaultSchema = 'public';
 
     /**
-     * Get sanitized schema name
+     * Cache current schema per request
+     */
+    protected static ?string $currentSchema = null;
+
+    /**
+     * Sanitize schema name
      */
     public function sanitizeSchema(string $schema): string
     {
@@ -28,17 +33,13 @@ class TenantConnectionService
     {
         $schema = $this->sanitizeSchema($schema);
 
-        $result = DB::selectOne("
-            SELECT schema_name
-            FROM information_schema.schemata
-            WHERE schema_name = ?
-        ", [$schema]);
-
-        return !is_null($result);
+        return DB::table('information_schema.schemata')
+            ->where('schema_name', $schema)
+            ->exists();
     }
 
     /**
-     * Create new schema
+     * Create schema
      */
     public function createSchema(string $schema): bool
     {
@@ -68,31 +69,34 @@ class TenantConnectionService
     }
 
     /**
-     * Switch database schema
+     * Switch to tenant schema (OPTIMIZED)
      */
     public function switchSchema(string $schema): void
     {
         $schema = $this->sanitizeSchema($schema);
 
-        config([
-            'database.connections.pgsql.search_path' => $schema
-        ]);
+        // ✅ avoid switching again in same request
+        if (self::$currentSchema === $schema) {
+            return;
+        }
 
-        DB::purge('pgsql');
-        DB::reconnect('pgsql');
+        DB::statement("SET search_path TO {$schema}");
+
+        self::$currentSchema = $schema;
     }
 
     /**
-     * Reset back to public schema
+     * Reset to default schema
      */
     public function resetSchema(): void
     {
-        config([
-            'database.connections.pgsql.search_path' => $this->defaultSchema
-        ]);
+        if (self::$currentSchema === $this->defaultSchema) {
+            return;
+        }
 
-        DB::purge('pgsql');
-        DB::reconnect('pgsql');
+        DB::statement("SET search_path TO {$this->defaultSchema}");
+
+        self::$currentSchema = $this->defaultSchema;
     }
 
     /**
@@ -100,19 +104,16 @@ class TenantConnectionService
      */
     public function currentSchema(): string
     {
-        $result = DB::selectOne("SELECT current_schema() AS schema");
-
-        return $result->schema;
+        return DB::selectOne("SELECT current_schema() AS schema")->schema;
     }
 
     /**
-     * Run tenant migrations
+     * Run migrations inside tenant schema
      */
     public function runTenantMigrations(
         string $schema,
         string $path = 'database/migrations'
     ): void {
-
         $this->switchSchema($schema);
 
         Artisan::call('migrate', [
@@ -120,8 +121,6 @@ class TenantConnectionService
             '--path' => $path,
             '--force' => true,
         ]);
-
-        $this->resetSchema();
     }
 
     /**
@@ -131,7 +130,6 @@ class TenantConnectionService
         string $schema,
         string $path = 'database/migrations'
     ): void {
-
         $this->switchSchema($schema);
 
         Artisan::call('migrate:fresh', [
@@ -139,8 +137,6 @@ class TenantConnectionService
             '--path' => $path,
             '--force' => true,
         ]);
-
-        $this->resetSchema();
     }
 
     /**
@@ -148,9 +144,8 @@ class TenantConnectionService
      */
     public function seedTenant(
         string $schema,
-        string $class = null
+        ?string $class = null
     ): void {
-
         $this->switchSchema($schema);
 
         $params = [
@@ -163,46 +158,35 @@ class TenantConnectionService
         }
 
         Artisan::call('db:seed', $params);
-
-        $this->resetSchema();
     }
 
     /**
-     * Create full tenant setup
+     * Full tenant setup (schema + migrate + seed)
      */
     public function setupTenant(
         string $schema,
         bool $seed = false,
         ?string $seederClass = null
     ): void {
-
         $schema = $this->sanitizeSchema($schema);
 
-        DB::beginTransaction();
-
         try {
-
             // create schema
             $this->createSchema($schema);
 
             // migrate
             $this->runTenantMigrations($schema);
 
-            // optional seed
+            // seed
             if ($seed) {
                 $this->seedTenant($schema, $seederClass);
             }
 
-            DB::commit();
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
+        } catch (\Throwable $e) {
 
             // cleanup failed schema
             $this->dropSchema($schema);
 
-            // reset connection
             $this->resetSchema();
 
             throw $e;
@@ -210,19 +194,25 @@ class TenantConnectionService
     }
 
     /**
-     * Execute callback inside tenant schema
+     * Execute logic inside tenant context (SAFE wrapper)
      */
     public function tenant(string $schema, callable $callback)
     {
-        try {
+        $previous = self::$currentSchema;
 
+        try {
             $this->switchSchema($schema);
 
             return $callback();
 
         } finally {
 
-            $this->resetSchema();
+            if ($previous) {
+                DB::statement("SET search_path TO {$previous}");
+                self::$currentSchema = $previous;
+            } else {
+                $this->resetSchema();
+            }
         }
     }
 }

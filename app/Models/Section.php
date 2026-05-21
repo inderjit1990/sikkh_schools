@@ -4,23 +4,22 @@ namespace App\Models;
 
 use App\Enums\Status;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Group extends Model
+class Section extends Model
 {
-    use SoftDeletes;
-
     protected $casts = [
         'status' => Status::class,
     ];
 
     protected $fillable = [
         'name',
-        'code',
-        'owner_name',
-        'mobile',
-        'contact_email',
+        'school_id',
+        'class_id',
         'status'
     ];
 
+    public function school()
+    {
+        return $this->belongsTo(School::class);
+    }
 }

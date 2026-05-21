@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('school_sessions', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('school_id');
             $table->string('name'); // 2025-26
             $table->date('start_date');
             $table->date('end_date');
             $table->boolean('is_current')->default(true);
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('school_id')->references('id')->on('schools')->onDelete('cascade');
         });
     }
 

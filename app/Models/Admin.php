@@ -4,15 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SchoolSession extends Model
+class Admin extends Model
 {
-    //
     protected $fillable = [
-        'start_date',
-        'end_date',
         'name',
-        'is_current',
-        'school_id'
+        'email',
+        'password',
+        'school_id',
+        'role',
+        'status',
+        'last_login_at'
     ];
 
     public function school()

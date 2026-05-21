@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('students_enrollments', function (Blueprint $table) {
             $table->id('id')->primary();
-            $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->foreignId('session_id')->constrained('school_sessions')->onDelete('cascade');
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('session_id');
             $table->integer('class_id');
-            $table->integer('section_id', 5);
+            $table->integer('section_id');
             $table->timestamps();
+            $table->softDeletes();
+            $table->foreign('student_id')->references('id')->on('students')->onDelete('cascade');
+            $table->foreign('session_id')->references('id')->on('school_sessions')->onDelete('cascade');
         });
     }
 

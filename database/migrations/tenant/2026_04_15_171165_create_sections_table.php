@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('sections', function (Blueprint $table) {
             $table->id('id');
-            $table->foreignId('class_id')->constrained('classes')->onDelete('cascade');
-            $table->string('full_name');
-            $table->tinyInteger('status')->default(1); // 1 = active, 0 = inactive
+            $table->string('name'); // A, B, C, etc.
+            $table->string('status')->default('active');
             $table->timestamps();
             $table->softDeletes();  
+            $table->foreignId('class_id')->constrained('classes')->onDelete('cascade');
         });
     }
 

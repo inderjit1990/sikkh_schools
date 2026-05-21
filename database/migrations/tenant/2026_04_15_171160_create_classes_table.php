@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('staffs_enrollments', function (Blueprint $table) {
+        Schema::create('classes', function (Blueprint $table) {
             $table->id('id');
-            $table->foreignId('staff_id')->constrained('staffs')->onDelete('cascade');
-            $table->foreignId('session_id')->constrained('school_sessions')->onDelete('cascade');    
-            $table->string('role'); // e.g., teacher, admin, etc.   
+            $table->string('name'); // Class 1, Class 2, etc.
+            $table->string('teacher_in_charge')->nullable();
+            $table->string('status')->default('active');
             $table->timestamps();
+            $table->softDeletes();  
         });
     }
 
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('staffs_enrollments');
+        Schema::dropIfExists('classes');
     }
 };
